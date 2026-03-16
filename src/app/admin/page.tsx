@@ -1,8 +1,11 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react'; // Suspenseを追加
 import { supabase } from '../../lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
+
+// 【重要】ビルドエラーを防ぐための魔法の一行
+export const dynamic = "force-dynamic";
 
 interface Guest {
   id: string;
@@ -13,10 +16,11 @@ interface Guest {
   is_checked_in: boolean;
 }
 
-export default function AdminPage() {
+// 検索パラメータを使う部分を別コンポーネントに分ける（Next.jsのルール）
+function AdminDashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const searchQuery = searchParams.get('search'); // URLから検索IDを取得
+  const searchQuery = searchParams.get('search');
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,13 +35,12 @@ export default function AdminPage() {
       }
     };
     checkUser();
-  }, [router, searchQuery]); // searchQueryが変わったら再実行
+  }, [router, searchQuery]);
 
   const fetchGuests = async () => {
     setLoading(true);
     let query = supabase.from('guest_list').select('*');
 
-    // もしURLに検索IDがあれば、その人だけに絞り込む
     if (searchQuery) {
       query = query.eq('id', searchQuery);
     } else {
@@ -45,7 +48,6 @@ export default function AdminPage() {
     }
 
     const { data, error } = await query;
-
     if (error) {
       alert("エラー: " + error.message);
     } else {
@@ -90,26 +92,39 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody>
-              {guests.map((guest) => (
-                <tr key={guest.id} className={`${guest.is_checked_in ? "bg-green-50" : "hover:bg-blue-50"}`}>
-                  <td className="p-4">
-                    <div className="font-bold">{guest.name}</div>
-                    <div className="text-xs text-gray-500">{guest.car_number}</div>
-                  </td>
-                  <td className="p-4 text-center">
-                    <button onClick={() => toggleCheckIn(guest.id, guest.is_checked_in)} className={`px-6 py-2 rounded-full font-bold text-sm ${guest.is_checked_in ? "bg-green-200 text-green-800" : "bg-blue-600 text-white"}`}>
-                      {guest.is_checked_in ? "完了" : "チェックイン"}
-                    </button>
-                  </td>
-                  <td className="p-4 text-center">
-                    <button onClick={() => deleteGuest(guest.id)} className="text-gray-300 hover:text-red-500">🗑️</button>
-                  </td>
-                </tr>
-              ))}
+              {guests.length === 0 ? (
+                <tr><td colSpan={3} className="p-8 text-center text-gray-400">名簿はありません</td></tr>
+              ) : (
+                guests.map((guest) => (
+                  <tr key={guest.id} className={`${guest.is_checked_in ? "bg-green-50" : "hover:bg-blue-50"}`}>
+                    <td className="p-4">
+                      <div className="font-bold">{guest.name}</div>
+                      <div className="text-xs text-gray-500">{guest.car_number}</div>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button onClick={() => toggleCheckIn(guest.id, guest.is_checked_in)} className={`px-6 py-2 rounded-full font-bold text-sm ${guest.is_checked_in ? "bg-green-200 text-green-800" : "bg-blue-600 text-white"}`}>
+                        {guest.is_checked_in ? "完了" : "チェックイン"}
+                      </button>
+                    </td>
+                    <td className="p-4 text-center">
+                      <button onClick={() => deleteGuest(guest.id)} className="text-gray-300 hover:text-red-500">🗑️</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
       </div>
     </div>
+  );
+}
+
+// 全体をSuspenseで囲むことでビルドエラーを回避
+export default function AdminPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center">読み込み中...</div>}>
+      <AdminDashboard />
+    </Suspense>
   );
 }
