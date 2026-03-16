@@ -1,17 +1,20 @@
 "use client";
 
-import React from 'react';
+import React, { Suspense } from 'react'; // Suspenseを追加
 import { QRCodeSVG } from 'qrcode.react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function QrPage() {
+// ビルドエラーを防ぐ合図
+export const dynamic = "force-dynamic";
+
+function QrContent() {
   const searchParams = useSearchParams();
   const guestId = searchParams.get('id');
 
-  // おじちゃんが読み取った時に飛ぶURLを作成
-  // 本番公開時は localhost を実際のドメインに変更します
-  const adminUrl = `http://localhost:3000/admin?search=${guestId}`;
+  // あなたのVercelのURLに書き換えてください
+  const baseUrl = "https://camp-saas-startour2224-dev.vercel.app"; 
+  const adminUrl = `${baseUrl}/admin?search=${guestId}`;
 
   return (
     <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-6 text-black">
@@ -21,7 +24,6 @@ export default function QrPage() {
 
         <div className="flex justify-center mb-8">
           <div className="bg-white p-4 border-2 border-gray-100 rounded-2xl shadow-inner">
-            {/* IDを含んだURLをQR化 */}
             {guestId ? (
               <QRCodeSVG value={adminUrl} size={200} />
             ) : (
@@ -32,7 +34,9 @@ export default function QrPage() {
 
         <div className="bg-green-50 rounded-2xl p-4 mb-8 text-center">
           <p className="text-xs text-green-700 font-bold mb-1">ステータス</p>
-          <p className="text-lg font-bold text-gray-800 font-mono">{guestId?.slice(0, 8)}...</p>
+          <p className="text-lg font-bold text-gray-800 font-mono">
+            {guestId ? guestId.slice(0, 8) : "---"}...
+          </p>
         </div>
 
         <Link href="/">
@@ -40,5 +44,14 @@ export default function QrPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+// Suspenseで囲んでビルドエラーを回避
+export default function QrPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-black">生成中...</div>}>
+      <QrContent />
+    </Suspense>
   );
 }
