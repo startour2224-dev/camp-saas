@@ -1,0 +1,44 @@
+"use client";
+
+import React from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+
+export default function QrPage() {
+  const searchParams = useSearchParams();
+  const guestId = searchParams.get('id');
+
+  // おじちゃんが読み取った時に飛ぶURLを作成
+  // 本番公開時は localhost を実際のドメインに変更します
+  const adminUrl = `http://localhost:3000/admin?search=${guestId}`;
+
+  return (
+    <div className="min-h-screen bg-green-50 flex flex-col items-center justify-center p-6 text-black">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center border-t-8 border-green-600">
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">受付準備完了！</h2>
+        <p className="text-gray-500 mb-8 text-sm">このQRコードをスタッフに見せてください。</p>
+
+        <div className="flex justify-center mb-8">
+          <div className="bg-white p-4 border-2 border-gray-100 rounded-2xl shadow-inner">
+            {/* IDを含んだURLをQR化 */}
+            {guestId ? (
+              <QRCodeSVG value={adminUrl} size={200} />
+            ) : (
+              <p className="text-red-500">IDが見つかりません</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-green-50 rounded-2xl p-4 mb-8 text-center">
+          <p className="text-xs text-green-700 font-bold mb-1">ステータス</p>
+          <p className="text-lg font-bold text-gray-800 font-mono">{guestId?.slice(0, 8)}...</p>
+        </div>
+
+        <Link href="/">
+          <button className="text-green-600 font-bold hover:underline">トップへ戻る</button>
+        </Link>
+      </div>
+    </div>
+  );
+}
