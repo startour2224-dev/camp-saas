@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
-export default function VideoPage() {
+export const dynamic = "force-dynamic"; // ビルドエラー回避
+
+function VideoContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const guestId = searchParams.get('id'); // URLからIDを取得
+  const guestId = searchParams.get('id');
   const [isVideoFinished, setIsVideoFinished] = useState(false);
 
   return (
@@ -24,7 +26,7 @@ export default function VideoPage() {
         </div>
         <button
           disabled={!isVideoFinished}
-          onClick={() => router.push(`/qr?id=${guestId}`)} // IDを渡してQRページへ
+          onClick={() => router.push(`/qr?id=${guestId}`)}
           className={`w-full py-4 rounded-xl font-bold transition-all shadow-lg ${
             isVideoFinished ? "bg-green-600 text-white" : "bg-gray-300 text-gray-500"
           }`}
@@ -33,5 +35,13 @@ export default function VideoPage() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function VideoPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-black">Loading...</div>}>
+      <VideoContent />
+    </Suspense>
   );
 }
